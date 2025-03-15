@@ -17,8 +17,6 @@ Lane Detection with Rust + OpenCV
 
 프로젝트 구조
 
-.
-
 	•	lane_detection.rs: Pipeline 구조체 및 그 외 차선 인식 로직(슬라이딩 윈도우, 투시변환, 다항식 피팅, 등)을 모아둔 모듈.
 	•	main.rs: 이 모듈을 불러와서 실제 start_detection 함수를 호출해 캡처 장치(또는 영상 파일)를 실행.
 
