@@ -76,9 +76,10 @@ Lane_Detection_Rust/
   - 시스템에 설치된 OpenCV를 `opencv` 크레이트가 FFI로 호출
 
 - **플랫폼별 OpenCV 설치 예시**:
-  - **Ubuntu**  
-    ```bash
-    sudo apt-get install libopencv-dev
+  - **Mac Os**  
+    ```zsh
+    brew install opencv
+    brew install llvm
     ```
   - **Windows**  
     [OpenCV.org 공식 빌드](https://opencv.org/releases/)나 [vcpkg](https://github.com/microsoft/vcpkg) 등을 통해 설치  
