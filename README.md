@@ -1,3 +1,5 @@
+![image](https://github.com/user-attachments/assets/430d607d-4d0c-45d1-bb58-2460f0c1debd)
+
 # Lane Detection with Rust + OpenCV
 
 Rust 언어와 OpenCV를 활용한 차선(Lane) 검출 데모 프로젝트입니다.
