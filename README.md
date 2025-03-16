@@ -80,6 +80,7 @@ Lane_Detection_Rust/
     ```zsh
     brew install opencv
     brew install llvm
+    export LIBCLANG_PATH=/opt/homebrew/opt/llvm/lib
     ```
   - **Windows**  
     [OpenCV.org 공식 빌드](https://opencv.org/releases/)나 [vcpkg](https://github.com/microsoft/vcpkg) 등을 통해 설치  
