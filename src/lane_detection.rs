@@ -86,6 +86,8 @@ pub struct Pipeline {
     /// 현재 프레임에서 계산된 조향각 (도 단위)
     steering_angle: f64,
 
+    visible: bool,
+
     /// 프로그램 종료를 위한 플래그
     pub(crate) exit_flag: bool,
 }
@@ -189,6 +191,7 @@ impl Pipeline {
             ploty,
             prev_angle: 0.0,
             steering_angle: 0.0,
+            visible: true,
             exit_flag: false,
         })
     }
@@ -942,71 +945,77 @@ impl Pipeline {
             right_lane_detected,
         );
 
-        // 9) 조향각 시각화 (슬라이딩 윈도우 영상에 선 그리기)
-        let sliding_with_line = self.display_heading_line(
-            &sliding_window_img,
-            &sliding_window_img,
-            self.steering_angle
-        )?;
+        if self.visible == true {
 
-        // 10) 원근 시야로 역투시 변환
-        let inv_trans = self.inv_perspective_transform(&sliding_with_line)?;
+            // 9) 조향각 시각화 (슬라이딩 윈도우 영상에 선 그리기)
+            let sliding_with_line = self.display_heading_line(
+                &sliding_window_img,
+                &sliding_window_img,
+                self.steering_angle
+            )?;
 
-        // 11) 원본 영상과 합성
-        let mut total_processed = Mat::default();
-        core::add_weighted(&img, 1.0, &inv_trans, 1.0, 0.0, &mut total_processed, -1)?;
+            // 10) 원근 시야로 역투시 변환
+            let inv_trans = self.inv_perspective_transform(&sliding_with_line)?;
 
-        // 텍스트(조향각) 표시
-        let angle_text = format!("Angle: {}", self.steering_angle as i32);
-        imgproc::put_text(
-            &mut total_processed,
-            &angle_text,
-            Point::new(20, 100),
-            imgproc::FONT_HERSHEY_SIMPLEX,
-            2.0,
-            Scalar::new(255.0, 255.0, 255.0, 255.0),
-            2,
-            imgproc::LINE_8,
-            false
-        )?;
+            // 11) 원본 영상과 합성
+            let mut total_processed = Mat::default();
+            core::add_weighted(&img, 1.0, &inv_trans, 1.0, 0.0, &mut total_processed, -1)?;
 
-        // FPS 측정
-        let elapsed = start_time.elapsed().as_secs_f32();
-        let fps = 1.0 / elapsed;
-        let fps_text = format!("FPS: {:.2}", fps);
-        let cols = total_processed.cols();
-        let text_x = cols - 400;
-        let text_y = 50;
-        imgproc::put_text(
-            &mut total_processed,
-            &fps_text,
-            Point::new(text_x, text_y),
-            imgproc::FONT_HERSHEY_SIMPLEX,
-            2.0,
-            Scalar::new(255.0, 255.0, 255.0, 255.0),
-            2,
-            imgproc::LINE_8,
-            false
-        )?;
+            // 텍스트(조향각) 표시
+            let angle_text = format!("Angle: {}", self.steering_angle as i32);
+            imgproc::put_text(
+                &mut total_processed,
+                &angle_text,
+                Point::new(20, 100),
+                imgproc::FONT_HERSHEY_SIMPLEX,
+                2.0,
+                Scalar::new(255.0, 255.0, 255.0, 255.0),
+                2,
+                imgproc::LINE_8,
+                false
+            )?;
 
-        let mut sliding_texted = sliding_with_line.clone();
-        imgproc::put_text(
-            &mut sliding_texted,
-            &angle_text,
-            Point::new(20, 100),
-            imgproc::FONT_HERSHEY_SIMPLEX,
-            2.0,
-            Scalar::new(255.0, 255.0, 255.0, 255.0),
-            2,
-            imgproc::LINE_8,
-            false
-        )?;
+            // FPS 측정
+            let elapsed = start_time.elapsed().as_secs_f32();
+            let fps = 1.0 / elapsed;
+            let fps_text = format!("FPS: {:.2}", fps);
+            let cols = total_processed.cols();
+            let text_x = cols - 400;
+            let text_y = 50;
+            imgproc::put_text(
+                &mut total_processed,
+                &fps_text,
+                Point::new(text_x, text_y),
+                imgproc::FONT_HERSHEY_SIMPLEX,
+                2.0,
+                Scalar::new(255.0, 255.0, 255.0, 255.0),
+                2,
+                imgproc::LINE_8,
+                false
+            )?;
 
-        // 최종 합성 결과 (좌: 슬라이딩윈도우, 우: 최종)
-        let mut merged = Mat::default();
-        hconcat_2(&sliding_texted, &total_processed, &mut merged)?;
+            let mut sliding_texted = sliding_with_line.clone();
+            imgproc::put_text(
+                &mut sliding_texted,
+                &angle_text,
+                Point::new(20, 100),
+                imgproc::FONT_HERSHEY_SIMPLEX,
+                2.0,
+                Scalar::new(255.0, 255.0, 255.0, 255.0),
+                2,
+                imgproc::LINE_8,
+                false
+            )?;
 
-        Ok(merged)
+            // 최종 합성 결과 (좌: 슬라이딩윈도우, 우: 최종)
+            let mut merged = Mat::default();
+            hconcat_2(&sliding_texted, &total_processed, &mut merged)?;
+            Ok(merged)
+        }
+        else {
+            Ok(Mat::default())
+        }
+
     }
 
     /// 차선 검출을 시작하는 함수입니다.
@@ -1016,7 +1025,10 @@ impl Pipeline {
     ///
     /// # 인자
     /// * `mode` - `CAM_MODE`와 같으면 웹캠을, 그렇지 않으면 지정된 동영상을 이용
-    pub fn start_detection(&mut self, mode: i32) -> Result<()> {
+    pub fn start_detection(&mut self, mode: i32, visible: bool) -> Result<()> {
+        // 확인용 영상 출력 여부
+        self.visible = visible;
+
         // 캡처 소스 준비 (웹캠 or 파일)
         let mut cap = if mode == CAM_MODE {
             // 웹캠
@@ -1026,8 +1038,10 @@ impl Pipeline {
             videoio::VideoCapture::from_file("./video/challenge.mp4", videoio::CAP_ANY)?
         };
 
-        // 결과를 보여줄 윈도우 생성
-        highgui::named_window("CAM View", highgui::WINDOW_AUTOSIZE)?;
+        if self.visible == true {
+            // 결과를 보여줄 윈도우 생성
+            highgui::named_window("CAM View", highgui::WINDOW_AUTOSIZE)?;
+        }
 
         loop {
             let mut frame = Mat::default();
@@ -1059,17 +1073,19 @@ impl Pipeline {
             // (2) 처리 파이프라인 실행
             let merged = self.processing(&resized)?;
 
-            // (3) 결과 영상 출력
-            highgui::imshow("CAM View", &merged)?;
+            if self.visible == true {
+                // (3) 결과 영상 출력
+                highgui::imshow("CAM View", &merged)?;
 
-            // (4) 'q' 키 입력 시 종료
-            let key = highgui::wait_key(1)?;
-            if key == 113 { // 'q' 키(ASCII)
-                self.exit_flag = true;
-            }
+                // (4) 'q' 키 입력 시 종료
+                let key = highgui::wait_key(1)?;
+                if key == 113 { // 'q' 키(ASCII)
+                    self.exit_flag = true;
+                }
 
-            if self.exit_flag {
-                break;
+                if self.exit_flag {
+                    break;
+                }
             }
 
             // FPS 출력 (콘솔)

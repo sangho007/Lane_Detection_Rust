@@ -5,7 +5,7 @@ use lane_detection::{Pipeline,LaneDetectionResult};
 fn main() -> LaneDetectionResult<()> {
     // 파이프라인 생성
     let mut drive = Pipeline::new()?;
-    let _ = drive.start_detection(0);   // 0 : video , 1 : cam
+    let _ = drive.start_detection(0,true);   // 0 : video , 1 : cam, true : visible, false : invisible
 
     Ok(())
 }
