@@ -90,14 +90,27 @@ Lane_Detection_Rust/
 
 ## 설치 & 빌드
 
-### 1. 레포지토리 클론
+### 1. Docker Image 사용
+```bash
+docker pull sangho007/rasp-ubuntu:latest
+docker run -it --privileged --net=host \
+    -e DISPLAY=host.docker.internal:0 \
+    -v /tmp/.X11-unix:/tmp/.X11-unix \
+    --name ubuntu \
+sangho007/rasp-ubuntu:latest
+```
+- 호스트 터미널 창에 `xhost +local:root` 를 입력해야 GUI가 출력됩니다.
+- Linux는 상관 없지만 Mac은 `Xquartz`를 필요로 합니다.
+- 본 예제에서 제공하는 도커 이미지는 arm64 플랫폼으로 빌드되어 있습니다.
+
+### 2. 레포지토리 클론
 
 ```bash
 git clone https://github.com/sangho007/Lane_Detection_Rust.git
 cd Lane_Detection_Rust
 ```
 
-### 2. Cargo 빌드 & 실행
+### 3. Cargo 빌드 & 실행
 
 ```bash
 cargo run
@@ -105,7 +118,7 @@ cargo run
 
 - 빌드 후 자동으로 `./video/challenge.mp4` 영상을 열어 차선을 검출합니다.  
 - 웹캠을 사용하고 싶다면 `start_detection` 함수의 인자를 `0`에서`1`로 변경한 뒤 `cargo run`을 재실행하세요.
-
+  
 ---
 
 ## 내용 설명
